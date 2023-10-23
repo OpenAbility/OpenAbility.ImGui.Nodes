@@ -36,10 +36,13 @@ public class NodeEditor
 			selectedNode = 0;
 		ImDrawListPtr drawList = ImGui.GetWindowDrawList();
 
-		ImGui.BeginChild(Name);
+		ImGui.BeginChild(Name, ImGui.GetWindowSize(), true, 
+			ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse);
 		
 		// Time to draw all of our stuff
 		ImGui.BeginGroup();
+		
+		drawList.PushClipRect(ImGui.GetCursorScreenPos(), ImGui.GetWindowSize());
 
 		Vector2 offset = ImGui.GetCursorScreenPos() + Scrolling;
 
@@ -155,7 +158,6 @@ public class NodeEditor
 				}
 			}
 			
-
 			ImGui.PopID();
 		}
 		
@@ -166,7 +168,7 @@ public class NodeEditor
 			drawList.ChannelsSetCurrent(1);
 			
 			Vector2 o0 = offset + nodes[selectedConnectionNode].GetPinPosition(selectedConnectionPin);
-			Vector2 o1 = o0 + new Vector2(50, 0);
+			Vector2 o1 = o0 + new Vector2(currentSelectedPin.PinMode == PinMode.Input ? -50 : 50, 0);
 
 			Vector2 i0;
 
@@ -183,13 +185,12 @@ public class NodeEditor
 						continue;
 					if(pin.PinTypeID != currentSelectedPin.PinTypeID)
 						continue;
-					float distance = (node.GetPinPosition(pin.ID) - ImGui.GetMousePos()).Length();
-					Console.WriteLine("Distance - " + pin.ID + ", " + distance + ", " + NodePin.SelectRadius);
-					
+
+					Vector2 delta = ImGui.GetMousePos() - (offset + node.GetPinPosition(pin.ID));
+					float distance = delta.Length();
+
 					if(distance > NodePin.SelectRadius)
 						continue;
-					
-					Console.WriteLine("In range - " + pin.ID);
 					
 					if (distance >= closestDistance)
 						continue;
@@ -200,9 +201,10 @@ public class NodeEditor
 			}
 			
 
-			i0 = closest != null ? nodes[closest.Node].GetPinPosition(closest.ID) : ImGui.GetMousePos();
+			i0 = closest != null ? offset + nodes[closest.Node].GetPinPosition(closest.ID) : ImGui.GetMousePos();
 			
-			Vector2 i1 = i0 + new Vector2(-50, 0);
+			Vector2 i1 = i0 + new Vector2(currentSelectedPin.PinMode == PinMode.Input ? 50 : -50, 0);
+			
 			
 			drawList.AddBezierCubic(o0, o1, i1, i0, 
 				nodes[selectedConnectionNode].GetPin(selectedConnectionPin).PinType.Colour, 3.0f);
@@ -210,6 +212,7 @@ public class NodeEditor
 		}
 
 		drawList.ChannelsMerge();
+		drawList.PopClipRect();
 		
 		if (ImGui.IsMouseClicked(ImGuiMouseButton.Right))
 			if (ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByPopup) || !ImGui.IsAnyItemHovered())

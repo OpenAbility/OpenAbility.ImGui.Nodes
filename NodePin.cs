@@ -12,7 +12,7 @@ public class NodePin
 
 	public readonly PinMode PinMode;
 	public static float Radius = 4.0f;
-	public static float RadiusSelectRatio = 1.5f;
+	public static float RadiusSelectRatio = 2f;
 
 	public static float SelectRadius
 	{
